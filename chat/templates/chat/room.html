@@ -91,28 +91,13 @@
                                 <div class="dropdown-content">
                                     {% if notifications %}
                                     {% for notification in  notifications %}
-                                    {% if notification.noti_type == 1 %}
+                                   
                                     {% if notification.unread %}
-                                    <p><a href="{% url 'read_noti' noti_id=notification.id %}"><b>New message from {{ notification.sender }}</b></a></p>
+                                    <p><a href="{% url 'read_noti' noti_id=notification.id %}"><b>{{notification.description}}</b></a></p>
                                     {% else %}
-                                    <p><a href="{% url 'read_noti' noti_id=notification.id %}">New message from {{ notification.sender }}</a></p>  
+                                    <p><a href="{% url 'read_noti' noti_id=notification.id %}">{{notification.description}}</a></p>  
                                     {% endif %}
-                
-                                    {% elif notification.noti_type == 2 %}
-                                    {% if notification.unread %}
-                                    <p><a href="{% url 'read_noti' noti_id=notification.id %}"><b>New friend request from {{ notification.sender }}</b></a></p>
-                                    {% else %}
-                                    <p><a href="{% url 'read_noti' noti_id=notification.id %}">New friend request from {{ notification.sender }}</a></p>  
-                                    {% endif %}
-                
-                                    {% elif notification.noti_type == 3 %}
-                                    {% if notification.unread %}
-                                    <p><a href="{% url 'read_noti' noti_id=notification.id %}"><b>request accepted by {{ notification.sender }}</b></a></p>
-                                    {% else %}
-                                    <p><a href="{% url 'read_noti' noti_id=notification.id %}"> request accepted by {{ notification.sender }}</a></p>  
-                                    {% endif %}
-                                    
-                                    {% endif %}
+        
                                     {% endfor %}
                                     {% endif %}
                                 </div>
@@ -139,10 +124,19 @@
 						<ul class="contacts">
 							{% for chat_room in chat_rooms %}
 							{% if chat_room.id != this_room %}
-							<li><a href="{% url 'room' room_id=chat_room.id %}" style="color: white;">{{ chat_room.name }}</a></li>
-							{% endif %}
+							<li><a href="{% url 'room' room_id=chat_room.id %}" style="color: white;">{{ chat_room.name }}</a></li><br>
+                            {% endif %}
 							{% endfor %}
 						{% endif %}
+                        
+                        {% if dm_rooms %}
+                        <l style="color: white;"i> --------------------------------------------- </li>
+                        {% for dm_room in dm_rooms %}
+                        {% if dm_room.id != this_room %}
+                        <li><a href="{% url 'room' room_id=dm_room.id %}" style="color: white;">{{ dm_room.name }}</a></li><br>
+                        {% endif %}
+                        {% endfor %}
+                        {% endif %}
 						</ul>
 					</div>
 					<div class="card-footer"></div>
@@ -539,19 +533,15 @@
             var cur_time = new Date(Date.now() - 5000);
             document.getElementById("notibtn").innerHTML =  data["notification"].length;
 
-            //console.log(document.getElementsByClassName("dropbtn").innerHTML);
             var ancestor =document.getElementsByClassName("dropdown-content");
             for(var i = 0; i < data["notification"].length; i++){
                 var noti_time = Date.parse(data["notification"][i].time); 
-                //console.log(noti_time);
+                
                 if(noti_time > cur_time) {
-                    //console.log("received"); 
-                    var room_url = "{% url 'read_noti' 1234 %}".replace(/1234/, data["notification"][i].id );
-                    //console.log(data["senders"][i]);
-                    var sender = data["senders"][i];
-                    //console.log(sender);
+                     
+                    var noti_url = "{% url 'read_noti' 1234 %}".replace(/1234/, data["notification"][i].id );
                     p = document.createElement("p");
-                    p.innerHTML = "<a href=" + room_url + "><b>" + "New message from " + sender + "</b></a>";
+                    p.innerHTML = "<a href=" + noti_url + "><b>" + notification.description + "</b></a>";
                     ancestor[0].prepend(p);  
                 }
             }

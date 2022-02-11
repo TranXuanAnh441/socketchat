@@ -26,11 +26,6 @@ def index(request):
         return_room = Room.objects.filter(participants = request.user)[0]
         return redirect(room,room_id=return_room.id)
 
-
-
-
-
-
 def error(request):
     return render(request, 'chat/error.html', {})
 
@@ -53,7 +48,8 @@ def room(request, room_id):
 
     #cur_room = Room.objects.get(id=room_id)
 
-    available_room=Room.objects.filter(participants=request.user)
+    public_room=Room.objects.filter(participants=request.user, is_dm =False)
+    dm_room = Room.objects.filter(participants =request.user, is_dm = True)
     # available_room.remove(cur_room)
     f=YourModelForm()
     notifications = Notification.objects.filter(receiver = request.user)
@@ -62,7 +58,8 @@ def room(request, room_id):
     return render(request, 'chat/room.html', {
         'room_id' : mark_safe(json.dumps(room_id)),
         'messages' : mark_safe(json.dumps(messages)),
-        'chat_rooms':available_room,
+        'chat_rooms':public_room,
+        'dm_rooms' : dm_room,
         'this_room' : room_id,
         'room_name': a.name,
         'form': f,
@@ -81,31 +78,28 @@ def checkajax(request):
 
 @login_required
 def add_room(request):
-    room_id = 0
     participant_list = []
     inst = Friendship.objects.filter(friends=request.user)
     friends = []
-    room_name = None
     for i in inst:
         friends.append(i.cur_user.username)
-        #print(i.cur_user.username)
-    title = "Create room"
+    title = "Create new room"
+    room_id = 0
+    room_name = ''
 
     if request.method=="POST":
         room_id = request.POST['room_id']
-        
-        room = Room.objects.get(id=room_id)
+        room = Room.objects.get(id = room_id)
         room_name = room.name
         title = "Modify room " + room.name
-        #print(title)
+        if room.is_dm == True:
+            print("this room is dm")
+            room_id = 0
+            title="Create new room"
         for participant in room.participants.all():
             #print(participant.username)
             if participant.username in friends and participant.username != request.user.username:
                 participant_list.append(participant.username)
-
-        # return render(request, 'chat/add_room.html', {
-        # 'friends' : friends
-        # })
 
     return render(request, 'chat/add_room.html', {
         'friends' : friends,
@@ -135,11 +129,13 @@ def create_room(request):
                 cur_room.participants.add(a)
             cur_room.save()
             return redirect(room, room_id=cur_room.id)
+        
         #print(friends)
-        mutualrooms=Room.objects.filter(participants__username__in=friends+[request.user.username])\
-        .annotate(num_ptcpant=Count('participants')).filter(num_ptcpant=len(friends)+1)
-        if len(mutualrooms)>0:
-            return redirect(room,room_id=mutualrooms[0].id)
+        # mutualrooms=Room.objects.filter(participants__username__in=friends+[request.user.username])\
+        # .annotate(num_ptcpant=Count('participants')).filter(num_ptcpant=len(friends)+1)
+        # if len(mutualrooms)>0:
+        #     return redirect(room,room_id=mutualrooms[0].id)
+        
         new_room=Room.objects.create(name=room_name)
         new_room.participants.add(request.user)
 
@@ -155,11 +151,25 @@ def create_room(request):
     return redirect(error)
 
 @login_required
+def dm(request, friendname):
+    try:
+        dm_room = Room.objects.get(participants__username__in=[friendname] +[request.user.username], is_dm = True)
+        return redirect(room, room_id=dm_room.id)
+    except:
+        room_name = request.user.username + ' ' + 'and' + ' ' + friendname + ' ' + '[Private]'
+        dm_room = Room.objects.create(name = room_name)
+        dm_room.participants.add(request.user)
+        dm_room.participants.add(User.objects.get(username=friendname))
+        dm_room.is_dm = True
+        dm_room.save()
+    return redirect(room, room_id=dm_room.id)
+
+
+
+@login_required
 def sf(request):
     return render(request,'chat/sf.html')
 
-def test(request):
-    return render(request,'chat/copy_code.html')
 @login_required
 def message_search(request, room_id):
 
@@ -180,7 +190,7 @@ def load_noti(request):
     signal = request.GET.get('signal')  
     #print(signal)
 
-    notification = Notification.objects.filter(receiver = request.user, unread = True).order_by('-time')
+    notification = Notification.objects.filter(receiver = request.user, unread = True).order_by('time')
     senders = []
     for n in notification:
         senders.append(n.sender.username)
@@ -200,8 +210,8 @@ def read_noti(request, noti_id):
 @login_required
 def friend(request):
     friends = Friendship.objects.filter(friends=request.user).all()
-    for friend in friends:
-        print(friend.cur_user.username)
+    # for friend in friends:
+    #     print(friend.cur_user.username)
     return render(request,'chat/friend.html' ,{"friends":friends})
 
 

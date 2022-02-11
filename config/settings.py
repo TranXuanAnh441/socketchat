@@ -36,7 +36,6 @@ INSTALLED_APPS = [
     'crispy_forms',
     'channels',
     'chat',
-    'authtest',
     'accounts',
     'django_bootstrap_icons',
     'emoji_picker',

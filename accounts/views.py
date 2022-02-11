@@ -1,10 +1,10 @@
 from django.shortcuts import render,redirect
 from django.contrib.auth import login as log
 from accounts.forms import CustomUserCreationForm, ProfileUpdateForm
-from authtest.views import home
 from accounts.models import Notification, User, Friendship, FriendRequest
 from django.contrib import messages
 from datetime import datetime
+from chat.models import Room
 # from chat.views import index
 
 # Create your views here.
@@ -31,7 +31,6 @@ def signup(request):
 
 def friendlist(username):
     friendnames = []
-    friend_number = 0
     inst=User.objects.get(username=username)
     fr=Friendship.objects.filter(friends=inst)
     for i in fr:
@@ -95,13 +94,13 @@ def profile(request,username):
             data['option']= True
             if FriendRequest.objects.filter(sender=inst, receiver= request.user, accepted = False).exists():
                 data['accept_friend'] = True
-                print("first stop")
+                #print("first stop")
             else :
                 if FriendRequest.objects.filter(sender=request.user, receiver=inst, accepted = False).exists():
                     data['request_sent'] = True
                 else :
                     data['add_friend'] = True
-                    print("third stop")
+                    #print("third stop")
 
     # print(data['add_friend'])
     # print(data['accept_friend'])
@@ -115,8 +114,7 @@ def add_friend(request, friendname):
     #inst=User.objects.get(username=friendname)
         friend_req = FriendRequest.objects.create(sender = request.user, receiver = inst)
         friend_req.save()
-        notification = Notification.objects.create(sender = friend_req.sender, receiver = friend_req.receiver, noti_type = 2, time = datetime.now(), destination = friend_req.sender.id)
-        notification.save()
+        friend_noti(request.user, inst, 'add')
     return redirect(profile, username = friendname)
 
 def accept_friend(request, friendname):
@@ -125,12 +123,15 @@ def accept_friend(request, friendname):
         friend_request = FriendRequest.objects.get(sender=inst, receiver=request.user, accepted=False)
         friend_request.accepted = True
         friend_request.save()
-
-        notification = Notification.objects.create(sender = request.user, receiver = inst, noti_type = 3, time = datetime.now(), destination = friend_request.receiver.id)
-        notification.save()
-
+        friend_noti(request.user, inst, 'accept')
         Friendship.make_friend(request.user, inst)
         Friendship.make_friend(inst, request.user)
+        room_name = request.user + " " + "and" + " " + friendname
+        new_room=Room.objects.create(name=room_name)
+        new_room.participants.add(request.user)
+        new_room.participants.add(inst)
+        new_room.is_dm = True
+        new_room.save()
         return redirect(profile, username = friendname)
     except:
         return redirect(profile, username = friendname)
@@ -153,3 +154,12 @@ def friend_search(request):
 
     else:
         return redirect('home')
+
+def friend_noti(sender, receiver, action):
+    if action =='add':
+        description = "new friend request from " + sender.username 
+    elif action=='accept':
+        description = "request accepted by " + sender.username
+
+    notification = Notification.objects.create(sender = sender, receiver = receiver, noti_type = 2, time = datetime.now(), destination = receiver.id, description = description)
+    notification.save()

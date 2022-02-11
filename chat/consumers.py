@@ -61,7 +61,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
     @database_sync_to_async
     def save_message(self,message,room_id,time,name=None,type=None,binn=None):
-        print("receiving message")
+        #print("receiving message")
         room = Room.objects.get(id=room_id)
         a=Message.objects.create(sender=self.scope['user'],room = room, date=time,message=message,filename=name)
         if name!=None:
@@ -86,12 +86,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         #print(participants)
         present_participants = room_cache.participants.all()
         #print(present_participants)
+        description = "New message from "+ self.scope['user'].username + " in " + room.name
         for participant in participants:
             if participant not in present_participants:
                 #print(participant)
-                notification = Notification.objects.create(sender = self.scope['user'], receiver = participant, noti_type = 1, time = time, destination = room_id)
+                notification = Notification.objects.create(sender = self.scope['user'], receiver = participant, noti_type = 1, time = time, description = description, destination = room_id)
                 notification.save()
-                print(notification.receiver.username)
+                #print(notification.receiver.username)
 
 
     @database_sync_to_async
