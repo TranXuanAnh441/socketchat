@@ -16,7 +16,7 @@ $ python manage.py migrate
 
 $ python manage.py runserver
 
-// in another window, launch the redis server and keep the window until you shut down the server
+# in another window, launch the redis server and keep the window until you shut down the server
 
 $ redis-server
 
