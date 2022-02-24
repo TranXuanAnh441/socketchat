@@ -24,14 +24,14 @@ class Friendship(models.Model):
     cur_user=models.ForeignKey(User,related_name='center',on_delete=models.CASCADE,null=True)
     @classmethod
     def make_friend(cls,cur_user,new_friend):
-        friend,create=cls.objects.get_or_create(
+        friend=cls.objects.get_or_create(
             cur_user=cur_user
         )
         friend.friends.add(new_friend)
     
     @classmethod
     def unfriend(cls,cur_user,new_friend):
-        friend,create=cls.objects.get_or_create(
+        friend=cls.objects.get_or_create(
             cur_user=cur_user
         )
         friend.friends.remove(new_friend)
@@ -39,7 +39,7 @@ class Friendship(models.Model):
 class FriendRequest(models.Model):
     id = AutoField(primary_key=True)
     receiver = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='request_receiver')
-    sender =  models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='request_Fsender')
+    sender =  models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE,related_name='request_sender')
     accepted = models.BooleanField(default = False)
 
 
