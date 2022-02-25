@@ -5,6 +5,7 @@ from accounts.models import Notification, User, Friendship, FriendRequest
 from django.contrib import messages
 from datetime import datetime
 from chat.models import Room
+from django.contrib.auth.decorators import login_required
 # from chat.views import index
 
 # Create your views here.
@@ -29,6 +30,7 @@ def signup(request):
         form = CustomUserCreationForm()
     return render(request,'accounts/signup.html',{'form':form})
 
+
 def friendlist(username):
     friendnames = []
     inst=User.objects.get(username=username)
@@ -37,7 +39,7 @@ def friendlist(username):
         friendnames.append(i.cur_user.username)
     return friendnames
 
-
+@login_required
 def profile(request,username):
     
     friendnames = friendlist(request.user.username)
@@ -106,6 +108,7 @@ def profile(request,username):
     # print(data['accept_friend'])
     return render(request,'accounts/profile.html',data)
 
+@login_required
 def add_friend(request, friendname):
     inst=User.objects.get(username=friendname)
     try:
@@ -117,6 +120,7 @@ def add_friend(request, friendname):
         friend_noti(request.user, inst, 'add')
     return redirect(profile, username = friendname)
 
+@login_required
 def accept_friend(request, friendname):
     try:
         inst=User.objects.get(username=friendname)
@@ -136,14 +140,14 @@ def accept_friend(request, friendname):
     except:
         return redirect(profile, username = friendname)
 
+@login_required
 def unfriend(request, friendname):
     inst=User.objects.get(username=friendname)
     Friendship.unfriend(request.user, inst)
     Friendship.unfriend(inst, request.user)
     return redirect(profile, username = friendname)
 
-
-
+@login_required
 def friend_search(request):
     if request.method=='POST':
         username = request.POST['search_input']
@@ -154,6 +158,7 @@ def friend_search(request):
 
     else:
         return redirect('home')
+
 
 def friend_noti(sender, receiver, action):
     if action =='add':
